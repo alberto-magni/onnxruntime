@@ -53,6 +53,8 @@ Status GraphAugmenter::AugmentGraph(Graph& graph,
     }
   }
 
+  std::vector<NodeArg*> new_args;
+
   // Add new nodes to the graph.
   for (const auto& node_def : graph_element_defs.NodeDefs()) {
     std::vector<NodeArg*> input_args, output_args;
@@ -60,12 +62,15 @@ Status GraphAugmenter::AugmentGraph(Graph& graph,
     for (const auto& arg : node_def.input_args) {
       NodeArg& node_arg = graph.GetOrCreateNodeArg(arg.name, arg.type_proto);
       input_args.push_back(&node_arg);
+      new_args.push_back(&node_arg);
     }
 
     for (const auto& arg : node_def.output_args) {
       NodeArg& node_arg = graph.GetOrCreateNodeArg(arg.name, arg.type_proto);
       output_args.push_back(&node_arg);
+      new_args.push_back(&node_arg);
     }
+
 
     graph.AddNode(node_def.name,
                   node_def.op_type,
@@ -91,6 +96,22 @@ Status GraphAugmenter::AugmentGraph(Graph& graph,
     ORT_RETURN_IF_ERROR(AddToExistingNodeArgs(
         "add graph outputs", graph, graph_element_defs.GraphOutputs(), graph.GetOutputs(), false, new_outputs));
     graph.SetOutputs(new_outputs);
+  }
+
+  const std::vector<const NodeArg*>& value_info = graph.GetValueInfo();
+
+  for (NodeArg* arg : new_args) {
+    if (graph.IsInputsIncludingInitializers(arg) || graph.IsOutput(arg)) {
+      continue;
+    }
+
+    if (std::find_if(value_info.begin(), value_info.end(), [arg](const NodeArg* x) {
+          return x->Name() == arg->Name();
+        }) != value_info.end()) {
+      continue;
+    }
+
+    graph.AddValueInfo(arg);
   }
 
   graph.SetGraphResolveNeeded();
