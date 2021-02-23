@@ -60,11 +60,11 @@ class RangeCreatorBase {
   }
 
   // Mark the beginning of a range.
-  void Begin() {
+  int64_t Begin() {
     ORT_ENFORCE(!is_begin_called_, "Begin cannot be called more than once.");
     ORT_ENFORCE(!is_end_called_, "Begin cannot be called after calling End.");
-    BeginImpl();
     is_begin_called_ = true;
+    return BeginImpl();
   }
 
   // Mark the end of a range.
@@ -83,7 +83,7 @@ class RangeCreatorBase {
     return is_end_called_;
   }
 
-  virtual void BeginImpl() = 0;
+  virtual int64_t BeginImpl() = 0;
 
   virtual void EndImpl() = 0;
 
@@ -103,7 +103,7 @@ class NvtxRangeCreator final : public RangeCreatorBase {
   NvtxRangeCreator(const std::string message, const Color color)
       : RangeCreatorBase(message, color) {};
 
-  void BeginImpl() override;
+  int64_t BeginImpl() override;
   void EndImpl() override;
 
  private:
@@ -117,7 +117,7 @@ class NvtxNestedRangeCreator final : public RangeCreatorBase {
   NvtxNestedRangeCreator(const std::string message, const Color color)
       : RangeCreatorBase(message, color) {};
 
-  void BeginImpl() override;
+  int64_t BeginImpl() override;
   void EndImpl() override;
 };
 

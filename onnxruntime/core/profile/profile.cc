@@ -10,8 +10,8 @@
 namespace onnxruntime {
 namespace profile {
 
-void NvtxRangeCreator::BeginImpl() {
-// enable only for debug builds because this function is for profiling only.
+int64_t NvtxRangeCreator::BeginImpl() {
+  // enable only for debug builds because this function is for profiling only.
   nvtxEventAttributes_t eventAttrib;
   eventAttrib.version = NVTX_VERSION;
   eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -20,7 +20,10 @@ void NvtxRangeCreator::BeginImpl() {
   eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
   eventAttrib.message.ascii = message_.c_str();
 
+  auto start = std::chrono::high_resolution_clock::now();
   range_id_ = nvtxRangeStartEx(&eventAttrib);
+  auto end = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 
 void NvtxRangeCreator::EndImpl() {
@@ -28,7 +31,7 @@ void NvtxRangeCreator::EndImpl() {
   nvtxRangeEnd(range_id_);
 }
 
-void NvtxNestedRangeCreator::BeginImpl() {
+int64_t NvtxNestedRangeCreator::BeginImpl() {
 // enable only for debug builds because this function is for profiling only.
   nvtxEventAttributes_t eventAttrib;
   eventAttrib.version = NVTX_VERSION;
@@ -38,7 +41,10 @@ void NvtxNestedRangeCreator::BeginImpl() {
   eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
   eventAttrib.message.ascii = message_.c_str();
   
+  auto start = std::chrono::high_resolution_clock::now();
   nvtxRangePushEx(&eventAttrib);
+  auto end = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 
 void NvtxNestedRangeCreator::EndImpl() {

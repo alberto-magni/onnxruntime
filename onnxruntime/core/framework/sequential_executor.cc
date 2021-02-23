@@ -189,6 +189,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
 #endif
 
   for (const auto& node_exec_plan : exec_plan_vec) {
+    counter_++;
     if (terminate_flag_) {
       LOGS(logger, WARNING) << "Exiting due to terminate flag being set to true.";
       return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Exiting due to terminate flag being set to true.");
@@ -303,8 +304,8 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
 #endif
 #ifdef ENABLE_NVTX_PROFILE
       profile::NvtxRangeCreator node_compute_range(
-          MakeString(node.OpType(), ".", node.Index(), "(", node.Name(), ")"), profile::Color::Yellow);
-      node_compute_range.Begin();
+          MakeString(node.OpType(), ".", node.Index(), "(", node.Name(), ")_" + std::to_string(counter_)), profile::Color::Yellow);
+      start_range_times_[counter_] = node_compute_range.Begin();
 #endif
       ORT_TRY {
 #ifdef ENABLE_TRAINING
